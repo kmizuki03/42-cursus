@@ -1,0 +1,77 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   parse_utils_bonus.c                                :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: kmizuki <kmizuki@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/11/10 23:18:33 by kmizuki           #+#    #+#             */
+/*   Updated: 2025/12/12 18:06:50 by kmizuki          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell_bonus.h"
+
+t_cmd	*new_cmd(void)
+{
+	t_cmd	*cmd;
+
+	cmd = malloc(sizeof(t_cmd));
+	if (!cmd)
+		return (NULL);
+	cmd->av = NULL;
+	cmd->redirs = NULL;
+	cmd->next = NULL;
+	return (cmd);
+}
+
+t_redir	*new_redir(t_redir_type type, char *file)
+{
+	t_redir	*redir;
+
+	redir = malloc(sizeof(t_redir));
+	if (!redir)
+		return (NULL);
+	redir->type = type;
+	redir->file = ft_strdup(file);
+	if (!redir->file)
+	{
+		free(redir);
+		return (NULL);
+	}
+	redir->heredoc_fd = -1;
+	redir->next = NULL;
+	return (redir);
+}
+
+void	add_redir(t_cmd *cmd, t_redir *redir)
+{
+	t_redir	*tmp;
+
+	if (!cmd->redirs)
+	{
+		cmd->redirs = redir;
+		return ;
+	}
+	tmp = cmd->redirs;
+	while (tmp->next)
+		tmp = tmp->next;
+	tmp->next = redir;
+}
+
+int	count_args(t_token *tokens, t_shell *shell)
+{
+	int	count;
+
+	count = 0;
+	while (tokens && tokens->type != TOKEN_PIPE && tokens->type != TOKEN_AND
+		&& tokens->type != TOKEN_OR && tokens->type != TOKEN_RPAREN)
+	{
+		if (tokens->type == TOKEN_WORD)
+			count += count_word_token(tokens, shell);
+		else if (is_redir_token(tokens->type) && tokens->next)
+			tokens = tokens->next;
+		tokens = tokens->next;
+	}
+	return (count);
+}
